@@ -395,12 +395,27 @@ class NeuronInterpreter:
             all_metrics[neuron_idx] = {}
             neuron_scoring_info = scoring_info[neuron_idx]
 
+            # for interp in neuron_interps:
+            #     annot = [annotations[interp][text] for text in neuron_scoring_info['texts']]
+            #     all_metrics[neuron_idx][interp] = self._compute_metrics(
+            #         annotations=np.array(annot),
+            #         labels=neuron_scoring_info['binarized_activations'],
+            #         activations=neuron_scoring_info['activations']
+            #     )
             for interp in neuron_interps:
-                annot = [annotations[interp][text] for text in neuron_scoring_info['texts']]
-                all_metrics[neuron_idx][interp] = self._compute_metrics(
-                    annotations=np.array(annot),
-                    labels=neuron_scoring_info['binarized_activations'],
-                    activations=neuron_scoring_info['activations']
-                )
+                annot = []
+                for text in neuron_scoring_info['texts']:
+                    if text not in annotations.get(interp, {}):
+                        print(f"\n Missing annotation for text:\n{text[:500]}...\nInterp: {interp}\n")
+                        print(f"Available keys for interp: {list(annotations.get(interp, {}).keys())[:3]}...\n")
+                        continue  # Optional: skip or handle it
+                    annot.append(annotations[interp][text])
+
+                if annot:  # Only compute metrics if we have annotations
+                    all_metrics[neuron_idx][interp] = self._compute_metrics(
+                        annotations=np.array(annot),
+                        labels=neuron_scoring_info['binarized_activations'],
+                        activations=neuron_scoring_info['activations']
+                    )
 
         return all_metrics
